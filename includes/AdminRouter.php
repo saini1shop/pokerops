@@ -54,6 +54,9 @@ class AdminRouter {
         $this->routes['GET']['whatsapp/logs'] = ['WhatsappController', 'logs'];
         $this->routes['GET']['whatsapp/search-players'] = ['WhatsappController', 'searchPlayers'];
         
+        // Landing page preview
+        $this->routes['GET']['landing-pages/preview/(\d+)'] = ['LandingPageController', 'preview'];
+        
         // API routes
         $this->routes['GET']['api/stats'] = ['ApiController', 'stats'];
     }

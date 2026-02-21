@@ -109,14 +109,178 @@ class LandingPageController {
     }
     
     public function edit(int $id): void {
-        echo "Edit Landing Page {$id} - Coming Soon";
+        $db = Database::getInstance();
+        
+        // Fetch the landing page
+        $stmt = $db->prepare("SELECT * FROM igp_landing_pages WHERE id = ?");
+        $stmt->execute([$id]);
+        $page = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$page) {
+            http_response_code(404);
+            include VIEWS_PATH . '/admin/error.php';
+            return;
+        }
+        
+        // Fetch campaigns for dropdown
+        $stmt = $db->prepare("SELECT id, name FROM igp_campaigns WHERE status = 'active' ORDER BY name");
+        $stmt->execute();
+        $campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Fetch states for dropdown
+        $stmt = $db->prepare("SELECT id, name FROM igp_states ORDER BY name");
+        $stmt->execute();
+        $states = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        include VIEWS_PATH . '/admin/landing-pages/edit.php';
     }
     
     public function update(int $id): void {
-        echo "Update Landing Page {$id} - Coming Soon";
+        $db = Database::getInstance();
+        
+        // Verify page exists
+        $stmt = $db->prepare("SELECT id FROM igp_landing_pages WHERE id = ?");
+        $stmt->execute([$id]);
+        if (!$stmt->fetch()) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Page not found']);
+            return;
+        }
+        
+        // Get form data
+        $title = trim($_POST['title'] ?? '');
+        $slug = trim($_POST['slug'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $campaignId = filter_input(INPUT_POST, 'campaign_id', FILTER_VALIDATE_INT);
+        $targetState = filter_input(INPUT_POST, 'target_state', FILTER_VALIDATE_INT);
+        $content = $_POST['content'] ?? '[]';
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+        $action = $_POST['action'] ?? 'save';
+        
+        // Determine status based on action
+        if ($action === 'publish') {
+            $status = 'published';
+        } elseif ($action === 'save_draft') {
+            $status = 'draft';
+        } else {
+            $status = 'draft'; // Default to draft
+        }
+        
+        // Validate required fields
+        $errors = [];
+        
+        if (empty($title)) {
+            $errors[] = 'Page title is required';
+        }
+        
+        if (empty($slug)) {
+            $errors[] = 'URL slug is required';
+        } elseif (!preg_match('/^[a-z0-9-]+$/', $slug)) {
+            $errors[] = 'Slug can only contain lowercase letters, numbers, and hyphens';
+        } else {
+            // Check if slug already exists (excluding current page)
+            $stmt = $db->prepare("SELECT id FROM igp_landing_pages WHERE slug = ? AND id != ?");
+            $stmt->execute([$slug, $id]);
+            if ($stmt->fetch()) {
+                $errors[] = 'This URL slug is already taken';
+            }
+        }
+        
+        if (!empty($errors)) {
+            // Store errors in session and redirect back
+            $_SESSION['form_errors'] = $errors;
+            $_SESSION['form_data'] = $_POST;
+            header('Location: /admin/landing-pages/edit/' . $id);
+            exit;
+        }
+        
+        // Update the landing page
+        $stmt = $db->prepare("
+            UPDATE igp_landing_pages 
+            SET title = ?, slug = ?, description = ?, campaign_id = ?, target_state_id = ?, 
+                content = ?, status = ?, is_active = ?, updated_at = NOW()
+            WHERE id = ?
+        ");
+        
+        $stmt->execute([
+            $title,
+            $slug,
+            $description,
+            $campaignId ?: null,
+            $targetState ?: null,
+            $content,
+            $status,
+            $isActive,
+            $id
+        ]);
+        
+        // Set success message
+        $_SESSION['success_message'] = 'Landing page updated successfully!';
+        
+        // Redirect based on action
+        if ($action === 'publish') {
+            header('Location: /admin/landing-pages');
+        } else {
+            header('Location: /admin/landing-pages/edit/' . $id);
+        }
+        exit;
     }
     
     public function publish(int $id): void {
-        echo "Publish Landing Page {$id} - Coming Soon";
+        $db = Database::getInstance();
+        
+        // Verify page exists and update status
+        $stmt = $db->prepare("
+            UPDATE igp_landing_pages 
+            SET status = CASE 
+                WHEN status = 'published' THEN 'draft' 
+                ELSE 'published' 
+            END, 
+            updated_at = NOW()
+            WHERE id = ?
+        ");
+        $stmt->execute([$id]);
+        
+        if ($stmt->rowCount() > 0) {
+            $_SESSION['success_message'] = 'Page status updated successfully!';
+        } else {
+            $_SESSION['error_message'] = 'Page not found';
+        }
+        
+        header('Location: /admin/landing-pages');
+        exit;
+    }
+    
+    public function preview(int $id): void {
+        $db = Database::getInstance();
+        
+        // Fetch the landing page
+        $stmt = $db->prepare("SELECT * FROM igp_landing_pages WHERE id = ?");
+        $stmt->execute([$id]);
+        $page = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$page) {
+            http_response_code(404);
+            echo "Preview not available - page not found";
+            return;
+        }
+        
+        // Set preview flag to prevent actual form submission
+        $_SESSION['preview_mode'] = true;
+        
+        // Include the public landing page view with preview data
+        $blocks = json_decode($page['content'] ?? '[]', true) ?: [];
+        
+        // Set page data for the view
+        $pageData = [
+            'id' => $page['id'],
+            'title' => $page['title'],
+            'slug' => $page['slug'],
+            'blocks' => $blocks,
+            'preview' => true
+        ];
+        
+        // Include the public landing page renderer
+        include VIEWS_PATH . '/public/landing-page.php';
     }
 }
