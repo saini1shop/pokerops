@@ -107,6 +107,14 @@ class AuthController {
         // Login successful
         $user = User::findByPhone($phone);
         
+        if (!$user) {
+            error_log("Login failed: User not found for phone: {$phone}");
+            $_SESSION['login_error'] = 'User not found';
+            $_SESSION['login_step'] = 'phone';
+            header('Location: /admin/login');
+            exit;
+        }
+        
         $_SESSION['admin_user_id'] = $user['id'];
         $_SESSION['admin_user_name'] = $user['name'];
         $_SESSION['admin_user_role'] = $user['role'];
