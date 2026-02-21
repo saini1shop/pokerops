@@ -33,6 +33,12 @@ class AdminRouter {
         
         // Campaigns
         $this->routes['GET']['campaigns'] = ['CampaignController', 'index'];
+        $this->routes['GET']['campaigns/new'] = ['CampaignController', 'create'];
+        $this->routes['POST']['campaigns'] = ['CampaignController', 'store'];
+        $this->routes['GET']['campaigns/edit/(\\d+)'] = ['CampaignController', 'edit'];
+        $this->routes['POST']['campaigns/(\\d+)'] = ['CampaignController', 'update'];
+        $this->routes['POST']['campaigns/(\\d+)/delete'] = ['CampaignController', 'delete'];
+        $this->routes['POST']['campaigns/(\\d+)/toggle'] = ['CampaignController', 'toggleStatus'];
         
         // Venues
         $this->routes['GET']['venues'] = ['VenueController', 'index'];

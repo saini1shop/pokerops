@@ -91,17 +91,17 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label for="campaign_id" class="block text-sm font-medium text-gray-300 mb-1">
-                    Campaign *
+                    Campaign (Optional)
                 </label>
-                <select id="campaign_id" name="campaign_id" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
-                    <option value="">Select a campaign...</option>
+                <select id="campaign_id" name="campaign_id" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    <option value="">No campaign attribution</option>
                     <?php foreach ($campaigns as $campaign): ?>
                         <option value="<?= $campaign['id'] ?>">
                             <?= htmlspecialchars($campaign['name']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <p class="text-xs text-gray-400 mt-1">Campaign attribution is required for tracking and analytics</p>
+                <p class="text-xs text-gray-400 mt-1">Campaign attribution is optional for tracking and analytics</p>
             </div>
 
             <div>
@@ -262,6 +262,31 @@
     </div>
 </div>
 
+<!-- Edit Block Modal -->
+<div id="edit-block-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border border-gray-700 w-96 max-w-2xl shadow-lg rounded-md bg-gray-800">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="edit-modal-title" class="text-lg font-medium text-white">Edit Block</h3>
+            <button type="button" class="close-edit-modal text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div id="edit-modal-content" class="mb-6">
+            <!-- Edit form will be inserted here -->
+        </div>
+        <div class="flex justify-end space-x-4">
+            <button type="button" class="close-edit-modal px-4 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700">
+                Cancel
+            </button>
+            <button type="button" id="save-block-edit" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg">
+                Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 // Basic slug generation
 document.getElementById('title').addEventListener('input', function() {
@@ -294,6 +319,23 @@ document.querySelectorAll('.close-modal').forEach(btn => {
     btn.addEventListener('click', () => {
         document.getElementById('block-modal').classList.add('hidden');
     });
+});
+
+document.querySelectorAll('.close-edit-modal').forEach(btn => {
+    btn.addEventListener('click', () => {
+        hideModal('edit-block-modal');
+        currentEditingIndex = -1;
+    });
+});
+
+document.getElementById('save-block-edit')?.addEventListener('click', saveBlockEdit);
+
+// Close edit modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('edit-block-modal').classList.contains('hidden')) {
+        hideModal('edit-block-modal');
+        currentEditingIndex = -1;
+    }
 });
 
 // Block selection
@@ -417,6 +459,23 @@ function updateContentBuilder() {
         `;
     });
     
+    // Always include the Add Block button at the end
+    html += `
+        <div class="text-center py-8 border-2 border-dashed border-gray-600 rounded-lg">
+            <svg class="w-12 h-12 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            <h3 class="text-lg font-medium text-white mb-2">Add Another Block</h3>
+            <p class="text-gray-400 mb-4">Continue building your page</p>
+            <button type="button" id="add-block-btn" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg inline-flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Add Block
+            </button>
+        </div>
+    `;
+    
     container.innerHTML = html;
     
     // Re-attach event listeners for edit and delete buttons
@@ -482,7 +541,157 @@ function attachBlockEventListeners() {
 // Edit block (placeholder - will implement modal later)
 function editBlock(index) {
     const block = blocks[index];
-    alert(`Edit ${block.type} block - implementation coming soon!`);
+    currentEditingIndex = index;
+
+    // Populate edit modal based on block type
+    showEditModal(block);
+}
+
+// Global variable for tracking which block is being edited
+let currentEditingIndex = -1;
+
+// Show edit modal for block
+function showEditModal(block) {
+    const modal = document.getElementById('edit-block-modal');
+    const modalTitle = document.getElementById('edit-modal-title');
+    const modalContent = document.getElementById('edit-modal-content');
+
+    modalTitle.textContent = `Edit ${block.type.charAt(0).toUpperCase() + block.type.slice(1)} Block`;
+
+    // Generate edit form based on block type
+    modalContent.innerHTML = generateEditForm(block);
+
+    modal.classList.remove('hidden');
+
+    // Focus first input
+    setTimeout(() => {
+        const firstInput = modalContent.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+    }, 100);
+}
+
+// Generate edit form for block type
+function generateEditForm(block) {
+    switch (block.type) {
+        case 'hero':
+            return `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Headline</label>
+                        <input type="text" class="edit-headline w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value="${block.data.headline || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Subheadline</label>
+                        <textarea rows="2" class="edit-subheadline w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500">${block.data.subheadline || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">CTA Text</label>
+                        <input type="text" class="edit-cta-text w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value="${block.data.cta_text || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">CTA Link</label>
+                        <input type="url" class="edit-cta-link w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value="${block.data.cta_link || ''}">
+                    </div>
+                </div>
+            `;
+        case 'form':
+            return `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Form Title</label>
+                        <input type="text" class="edit-title w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value="${block.data.title || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                        <textarea rows="2" class="edit-description w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500">${block.data.description || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Button Text</label>
+                        <input type="text" class="edit-button-text w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value="${block.data.button_text || ''}">
+                    </div>
+                </div>
+            `;
+        case 'text':
+            return `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Content</label>
+                        <textarea rows="6" class="edit-content w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500">${block.data.content || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Text Align</label>
+                        <select class="edit-text-align w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                            <option value="left" ${block.data.text_align === 'left' ? 'selected' : ''}>Left</option>
+                            <option value="center" ${block.data.text_align === 'center' ? 'selected' : ''}>Center</option>
+                            <option value="right" ${block.data.text_align === 'right' ? 'selected' : ''}>Right</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        case 'offers':
+            return `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Section Title</label>
+                        <input type="text" class="edit-title w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value="${block.data.title || ''}">
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        Offer items will be configured in advanced settings.
+                    </div>
+                </div>
+            `;
+        case 'faq':
+            return `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Section Title</label>
+                        <input type="text" class="edit-title w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value="${block.data.title || ''}">
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        FAQ items will be configured in advanced settings.
+                    </div>
+                </div>
+            `;
+        default:
+            return `<div class="text-gray-400">No edit options available for this block type.</div>`;
+    }
+}
+
+// Save block edits
+function saveBlockEdit() {
+    if (currentEditingIndex === -1) return;
+
+    const block = blocks[currentEditingIndex];
+    const modalContent = document.getElementById('edit-modal-content');
+
+    // Update block data based on form inputs
+    switch (block.type) {
+        case 'hero':
+            block.data.headline = modalContent.querySelector('.edit-headline').value;
+            block.data.subheadline = modalContent.querySelector('.edit-subheadline').value;
+            block.data.cta_text = modalContent.querySelector('.edit-cta-text').value;
+            block.data.cta_link = modalContent.querySelector('.edit-cta-link').value;
+            break;
+        case 'form':
+            block.data.title = modalContent.querySelector('.edit-title').value;
+            block.data.description = modalContent.querySelector('.edit-description').value;
+            block.data.button_text = modalContent.querySelector('.edit-button-text').value;
+            break;
+        case 'text':
+            block.data.content = modalContent.querySelector('.edit-content').value;
+            block.data.text_align = modalContent.querySelector('.edit-text-align').value;
+            break;
+        case 'offers':
+        case 'faq':
+            block.data.title = modalContent.querySelector('.edit-title').value;
+            break;
+    }
+
+    // Update display and close modal
+    updateContentBuilder();
+    updateHiddenInput();
+    hideModal('edit-block-modal');
+    currentEditingIndex = -1;
 }
 
 // Update hidden input with JSON
