@@ -84,6 +84,11 @@ class LandingPageController {
             }
         }
         
+        // Campaign is now required for page creation
+        if (empty($campaignId)) {
+            $errors[] = 'Campaign selection is required';
+        }
+        
         if (!empty($errors)) {
             // Store errors in session and redirect back
             $_SESSION['form_errors'] = $errors;
@@ -286,19 +291,10 @@ class LandingPageController {
         // Set preview flag to prevent actual form submission
         $_SESSION['preview_mode'] = true;
         
-        // Include the public landing page view with preview data
+        // Parse blocks from JSON content
         $blocks = json_decode($page['content'] ?? '[]', true) ?: [];
         
-        // Set page data for the view
-        $pageData = [
-            'id' => $page['id'],
-            'title' => $page['title'],
-            'slug' => $page['slug'],
-            'blocks' => $blocks,
-            'preview' => true
-        ];
-        
-        // Include the public landing page renderer
+        // Pass data to public view
         include VIEWS_PATH . '/public/landing-page.php';
     }
 }
