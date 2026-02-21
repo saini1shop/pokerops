@@ -21,6 +21,12 @@ class LandingPageController {
         $stmt->execute();
         $pages = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
+        $user = [
+            'id' => $_SESSION['admin_user_id'],
+            'name' => $_SESSION['admin_user_name'],
+            'role' => $_SESSION['admin_user_role'],
+        ];
+        
         include VIEWS_PATH . '/admin/landing-pages/index.php';
     }
     
@@ -36,6 +42,12 @@ class LandingPageController {
         $stmt = $db->prepare("SELECT id, name FROM igp_states ORDER BY name");
         $stmt->execute();
         $states = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $user = [
+            'id' => $_SESSION['admin_user_id'],
+            'name' => $_SESSION['admin_user_name'],
+            'role' => $_SESSION['admin_user_role'],
+        ];
         
         include VIEWS_PATH . '/admin/landing-pages/create.php';
     }
@@ -131,6 +143,12 @@ class LandingPageController {
         $stmt = $db->prepare("SELECT id, name FROM igp_states ORDER BY name");
         $stmt->execute();
         $states = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $user = [
+            'id' => $_SESSION['admin_user_id'],
+            'name' => $_SESSION['admin_user_name'],
+            'role' => $_SESSION['admin_user_role'],
+        ];
         
         include VIEWS_PATH . '/admin/landing-pages/edit.php';
     }
