@@ -1,14 +1,3 @@
-<?php
-/**
- * Landing Pages Index View
- * @var array $pages
- */
-
-$title = 'Landing Pages';
-$contentView = __DIR__ . '/index-content.php';
-include __DIR__ . '/../layout.php';
-?>
-
 <div class="mb-6 flex items-center justify-between">
     <div>
         <h1 class="text-2xl font-bold text-gray-900">Landing Pages</h1>
@@ -37,7 +26,7 @@ include __DIR__ . '/../layout.php';
             </div>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl border border-gray-200 p-6">
         <div class="flex items-center">
             <div class="p-2 bg-green-100 rounded-lg">
@@ -53,7 +42,7 @@ include __DIR__ . '/../layout.php';
             </div>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl border border-gray-200 p-6">
         <div class="flex items-center">
             <div class="p-2 bg-yellow-100 rounded-lg">
@@ -69,7 +58,7 @@ include __DIR__ . '/../layout.php';
             </div>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl border border-gray-200 p-6">
         <div class="flex items-center">
             <div class="p-2 bg-purple-100 rounded-lg">
@@ -90,7 +79,7 @@ include __DIR__ . '/../layout.php';
     <div class="px-6 py-4 border-b border-gray-200">
         <h2 class="text-lg font-semibold text-gray-900">All Pages</h2>
     </div>
-    
+
     <?php if (empty($pages)): ?>
         <div class="px-6 py-12 text-center">
             <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,17 +148,17 @@ include __DIR__ . '/../layout.php';
                             <td class="px-6 py-4 text-sm font-medium">
                                 <div class="flex space-x-2">
                                     <?php if (($page['status'] ?? 'draft') === 'published'): ?>
-                                        <a href="/<?= htmlspecialchars($page['slug'] ?? '') ?>" target="_blank" 
+                                        <a href="/<?= htmlspecialchars($page['slug'] ?? '') ?>" target="_blank"
                                            class="text-green-600 hover:text-green-900">
                                             View
                                         </a>
                                     <?php endif; ?>
-                                    <a href="/admin/landing-pages/edit/<?= $page['id'] ?>" 
+                                    <a href="/admin/landing-pages/edit/<?= $page['id'] ?>"
                                        class="text-blue-600 hover:text-blue-900">
                                         Edit
                                     </a>
                                     <form method="POST" action="/admin/landing-pages/<?= $page['id'] ?>/publish" class="inline">
-                                        <button type="submit" 
+                                        <button type="submit"
                                                 class="text-<?= ($page['status'] ?? 'draft') === 'published' ? 'yellow' : 'green' ?>-600 hover:text-<?= ($page['status'] ?? 'draft') === 'published' ? 'yellow' : 'green' ?>-900">
                                             <?= ($page['status'] ?? 'draft') === 'published' ? 'Unpublish' : 'Publish' ?>
                                         </button>
