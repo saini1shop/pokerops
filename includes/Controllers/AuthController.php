@@ -19,7 +19,10 @@ class AuthController {
         $phone = $_SESSION['login_phone'] ?? '';
         $step = $_SESSION['login_step'] ?? 'phone'; // phone | otp
         
-        unset($_SESSION['login_error'], $_SESSION['login_phone'], $_SESSION['login_step']);
+        unset($_SESSION['login_error']);
+        if ($step === 'phone') {
+            unset($_SESSION['login_phone'], $_SESSION['login_step']);
+        }
         
         include VIEWS_PATH . '/admin/auth/login.php';
     }
