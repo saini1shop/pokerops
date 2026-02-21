@@ -87,6 +87,9 @@ class AuthController {
         $phone = $_SESSION['login_phone'] ?? '';
         $otpId = $_SESSION['pending_otp_id'] ?? null;
         
+        error_log("Session data: phone={$phone}, otpId={$otpId}, code={$code}");
+        error_log("Session ID: " . session_id());
+        
         if (!$otpId || !$code) {
             $_SESSION['login_error'] = 'Invalid verification';
             $_SESSION['login_step'] = 'otp';
